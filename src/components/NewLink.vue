@@ -18,8 +18,20 @@
 </template>
 
 <script>
-  export default {
+import { Socket} from 'phoenix-socket'
+
+export default {
     name: 'NewLink',
+    mounted() {
+      let socket = new Socket("ws://localhost:4000/socket")
+      socket.connect();
+
+      this.channel = socket.channel("links", {});
+      this.channel.join()
+      .receive("ok", resp => { console.log("NewLink Joined successfully", resp) })
+      .receive("error", resp => { console.log("NewLink Unable to join", resp) })
+
+    },
     data () {
       return {
         form : {
@@ -34,8 +46,7 @@
           title: this.form.title,
           url: this.form.url
         }
-        // we gonna replace this console log with  a socket client call
-        console.log(link)
+        this.channel.push("new_link", {link: link})
       }
     }
   }

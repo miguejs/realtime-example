@@ -1,17 +1,39 @@
 <template>
   <div class="container">
-    <div class="feed-container">
+    <div class="feed-container" id="feed">
       <div class="siimple-h3">Feed</div>
-      <div class="siimple-alert siimple-alert--info">
-        Github: <span class="siimple-link"> https://github.com/ </span>
+      <div v-for="link of links" :key="link.url" class="siimple-alert siimple-alert--info animated fadeInDown">
+        {{ link.title }}: <span class="siimple-link"> {{ link.url}} </span>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import { Socket} from 'phoenix-socket'
   export default {
-    name: 'Feed'
+    name: 'Feed',
+    mounted() {
+      let socket = new Socket("ws://localhost:4000/socket")
+      socket.connect();
+
+      this.channel = socket.channel("links", {});
+
+      this.channel.join()
+      .receive("ok", resp => { console.log("Feed Joined successfully", resp) })
+      .receive("error", resp => { console.log("Feed Unable to join", resp) })
+
+      this.channel.on('new_link_added', payload => {
+       console.log("from Phoenix", payload)
+        this.links.push(payload.link)
+      });
+
+    },
+    data() {
+      return {
+        links: []
+      }
+    }
   }
 </script>
 
